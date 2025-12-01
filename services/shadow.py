@@ -69,7 +69,7 @@ def add_shadow(
         # Use image URL if provided
         data['image_url'] = image_url
     elif image_data:
-        # Convert image bytes to base64 string for API transmission
+        
         data['file'] = base64.b64encode(image_data).decode('utf-8')
     else:
         # At least one image source must be provided
