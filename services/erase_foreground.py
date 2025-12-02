@@ -55,3 +55,4 @@ def erase_foreground(
 
 # Export the function
 __all__ = ['erase_foreground'] 
+# End of file services/erase_foreground.py
