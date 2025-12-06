@@ -43,7 +43,7 @@ def create_packshot(
         'content_moderation': content_moderation
     }
     
-    # Add optional SKU if provided
+   
     if sku:
         data['sku'] = sku
     
