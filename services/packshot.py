@@ -35,7 +35,7 @@ def create_packshot(
     # Convert image data to base64
     image_base64 = base64.b64encode(image_data).decode('utf-8')
     
-    # Prepare request data
+   
     data = {
         'file': image_base64,
         'background_color': background_color,
