@@ -43,7 +43,7 @@ def create_packshot(
     image_base64 = base64.b64encode(image_data).decode('utf-8')
     
    
-    # Construct request payload with required and optional processing flags
+ 
     data = {
         'file': image_base64,
         'background_color': background_color,
