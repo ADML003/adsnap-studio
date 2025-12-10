@@ -39,7 +39,7 @@ def create_packshot(
     }
     
   
-    # Convert image bytes to base64 so it can be sent in JSON
+    
     image_base64 = base64.b64encode(image_data).decode('utf-8')
     
    
