@@ -31,7 +31,7 @@ def create_packshot(
     """
     url = "https://engine.prod.bria-api.com/v1/product/packshot"
     
-    # API authentication and JSON content headers
+
     headers = {
         'api_token': api_key,
         'Accept': 'application/json',
