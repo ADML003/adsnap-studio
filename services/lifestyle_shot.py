@@ -126,9 +126,7 @@ def lifestyle_shot_by_image(
     enhance_ref_image: bool = True,
     ref_image_influence: float = 1.0
 ) -> Dict[str, Any]:
-    """
-    Generate a lifestyle shot using a reference image.
-    """
+ 
     url = "https://engine.prod.bria-api.com/v1/product/lifestyle_shot_by_image"
     
     headers = {
