@@ -45,4 +45,4 @@ def enhance_prompt(
         return result.get("prompt variations", prompt)  # Return original prompt if enhancement fails
     except Exception as e:
         print(f"Error enhancing prompt: {str(e)}")
-        return prompt  # Return original prompt on error 
+        return prompt
