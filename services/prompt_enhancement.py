@@ -42,7 +42,7 @@ def enhance_prompt(
         print(f"Response body: {response.text}")
         
         result = response.json()
-        return result.get("prompt variations", prompt)  # Return original prompt if enhancement fails
+        return result.get("prompt variations", prompt)  
     except Exception as e:
         print(f"Error enhancing prompt: {str(e)}")
         return prompt
