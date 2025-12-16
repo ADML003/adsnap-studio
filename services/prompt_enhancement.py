@@ -28,7 +28,7 @@ def enhance_prompt(
     
     data = {
         'prompt': prompt,
-        **kwargs #to add more options if any 
+        **kwargs 
          
     }
     
