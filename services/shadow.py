@@ -54,7 +54,7 @@ def add_shadow(
         'Content-Type': 'application/json'
     }
     
-    # Prepare the base request payload with required shadow parameters
+
     data = {
         'shadow_type': shadow_type,
         'shadow_color': shadow_color,
