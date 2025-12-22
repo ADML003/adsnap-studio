@@ -64,15 +64,15 @@ def add_shadow(
         'shadow_offset': shadow_offset
     }
     
-    # Add image source - either URL or base64-encoded file data
+   
     if image_url:
-        # Use image URL if provided
+       
         data['image_url'] = image_url
     elif image_data:
         
         data['file'] = base64.b64encode(image_data).decode('utf-8')
     else:
-        # At least one image source must be provided
+        
         raise ValueError("Either image_data or image_url must be provided")
     
     # Add optional parameters only if they are specified
