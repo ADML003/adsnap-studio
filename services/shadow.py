@@ -46,18 +46,35 @@ def add_shadow(
     use_local_fallback: bool = False,
     return_format: str = "json",
     output_path: Optional[str] = None,
+    shadow_angle: int = -45,
+    shadow_distance: Optional[int] = None,
+    shadow_hardness: float = 1.0,
+    use_gradient: bool = False,
+    gradient_stops: Optional[List[Tuple[str, int]]] = None,
+    vignette_intensity: int = 0,
 ) -> Dict[str, Any]:
     """
     Add shadow to an image using the Bria AI API.
     
     This function calls the Bria AI shadow API to add realistic shadows to product images.
-    It supports both regular and floating shadows with customizable properties.
+    It supports both regular and floating shadows with customizable properties, and local Pillow-based
+    rendering with advanced modes like gradient shadows, vignette, and perspective effects.
+    
+    Supported shadow modes (use_local_fallback=True):
+    - regular (drop): Classic drop shadow with offset and blur
+    - float: Floating elliptical shadow below product
+    - soft: Low-hardness shadow for subtle effect
+    - hard: High-hardness shadow for dramatic effect
+    - long: Directional shadow extending far (perspective-based)
+    - glow: Soft, wide glow effect around edges
+    - reflection: Mirrored reflection below product
     
     Args:
         api_key: Bria AI API key for authentication
         image_data: Image data in bytes (optional if image_url provided)
         image_url: URL of the image (optional if image_data provided)
-        shadow_type: Type of shadow. Accepts aliases: "regular"|"float"|"natural"|"drop".
+        image_path: Optional local image path to load if bytes/url not provided
+        shadow_type: Type of shadow. Accepts "regular"|"float"|"natural"|"drop"|"soft"|"hard"|"long"|"glow"|"reflection"
         background_color: Optional background color in hex format (e.g., "#FFFFFF")
         background_transparent: If True, output background will be transparent (overrides background_color)
         shadow_color: Shadow color in hex format (default: black "#000000")
@@ -66,18 +83,23 @@ def add_shadow(
         shadow_blur: Shadow blur amount for softness
         shadow_width: Optional shadow width for float shadows
         shadow_height: Optional shadow height for float shadows (default: 70)
+        shadow_angle: Direction angle in degrees (-45 to 90) for directional shadows (default: -45)
+        shadow_distance: Distance of shadow from object (for long/glow modes)
+        shadow_hardness: Shadow edge hardness 0.0-2.0; <1 soft, 1 normal, >1 hard
+        use_gradient: If True, shadow transitions to second color (use gradient_stops)
+        gradient_stops: List of [(color_hex, alpha_pct)] tuples for gradient shadow
+        vignette_intensity: Optional vignette darkening 0-100 around image edges
         sku: Optional SKU identifier for tracking
         force_rmbg: Whether to force background removal before adding shadow
         content_moderation: Whether to enable content moderation checks
-        image_path: Optional local image path to load if bytes/url not provided
         timeout: Request timeout for API calls
         session: Optional requests.Session to reuse
-        use_local_fallback: If True or on API error, generate a basic local shadow with Pillow
-        return_format: Output format for local fallback: "json" (default). Currently API returns JSON only.
+        use_local_fallback: If True or on API error, generate local shadow with Pillow
+        return_format: Output format for local fallback: "json" (default)
         output_path: Optional path to save the resulting image (local fallback only)
     
     Returns:
-        Dict containing the API response with the processed image
+        Dict containing the API response with the processed image or local render metadata
     """
     # Normalize shadow type aliases early
     original_shadow_type = shadow_type
@@ -97,7 +119,7 @@ def add_shadow(
     
 
     # Input validation
-    allowed_shadow_types = {"regular", "float"}
+    allowed_shadow_types = {"regular", "float", "soft", "hard", "long", "glow", "reflection"}
     if shadow_type not in allowed_shadow_types:
         raise ValueError(f"shadow_type must be one of {allowed_shadow_types} (received: {original_shadow_type})")
 
