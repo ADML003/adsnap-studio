@@ -200,6 +200,166 @@ def add_shadow(
         a = int(255 * (max(0, min(100, opacity_pct)) / 100.0))
         return r, g, b, a
 
+    def _apply_vignette(img: Any, vignette_alpha: int) -> Any:
+        """Apply vignette darkening around edges."""
+        if vignette_alpha <= 0 or Image is None:
+            return img
+        w, h = img.size
+        vignette = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+        from PIL import ImageDraw
+        draw = ImageDraw.Draw(vignette)
+        # Create concentric darkening
+        steps = 40
+        for i in range(steps):
+            alpha = int((vignette_alpha / 100.0) * 255 * (i / steps))
+            draw.ellipse([
+                (-w * i / steps, -h * i / steps),
+                (w + w * i / steps, h + h * i / steps)
+            ], outline=(0, 0, 0, alpha), width=2)
+        if img.mode != 'RGBA':
+            img = img.convert('RGBA')
+        img.alpha_composite(vignette)
+        return img
+
+    def _local_glow_shadow(img: Any) -> Any:
+        """Create a soft glow effect around the product."""
+        w, h = img.size
+        bg = Image.new('RGBA', (w, h), (0, 0, 0, 0) if background_color is None else ImageColor.getrgb(background_color) + (255,))
+        if img.mode != 'RGBA':
+            img = img.convert('RGBA')
+        
+        # Create a large blur for glow
+        glow_blur = shadow_blur if shadow_blur is not None else 40
+        glow_size = w + h
+        glow = Image.new('RGBA', (glow_size, glow_size), (0, 0, 0, 0))
+        rgba = _hex_to_rgba(shadow_color, shadow_intensity // 2)
+        glow_inner = Image.new('RGBA', (glow_size, glow_size), rgba)
+        glow_inner = glow_inner.filter(ImageFilter.GaussianBlur(radius=glow_blur))
+        glow.alpha_composite(glow_inner)
+        
+        # Center glow under product
+        glow_x = (w - glow_size) // 2
+        glow_y = h - (glow_size // 3)
+        bg.alpha_composite(glow, (glow_x, glow_y))
+        bg.alpha_composite(img)
+        return bg
+
+    def _local_reflection_shadow(img: Any) -> Any:
+        """Create a mirrored reflection/shadow below product."""
+        w, h = img.size
+        bg = Image.new('RGBA', (w, h + h // 3), (0, 0, 0, 0) if background_color is None else ImageColor.getrgb(background_color) + (255,))
+        if img.mode != 'RGBA':
+            img = img.convert('RGBA')
+        
+        # Place original image
+        bg.alpha_composite(img, (0, 0))
+        
+        # Create reflection
+        reflection = img.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
+        reflection_alpha = reflection.split()[-1]
+        # Gradient fade for reflection
+        for y in range(reflection.size[1]):
+            fade = int(255 * (1.0 - y / reflection.size[1]))
+            alpha = Image.new('L', (reflection.size[0], 1), fade)
+            # Blend with existing alpha
+        
+        # Darken reflection
+        rgba = _hex_to_rgba(shadow_color, shadow_intensity)
+        darkened = Image.new('RGBA', reflection.size, rgba)
+        darkened.putalpha(reflection_alpha)
+        
+        bg.alpha_composite(darkened, (0, h))
+        return bg
+
+    def _local_long_shadow(img: Any) -> Any:
+        """Create a perspective/long shadow extending from product."""
+        w, h = img.size
+        extended_w = int(w * 2)
+        extended_h = int(h * 2)
+        bg = Image.new('RGBA', (extended_w, extended_h), (0, 0, 0, 0) if background_color is None else ImageColor.getrgb(background_color) + (255,))
+        
+        if img.mode != 'RGBA':
+            img = img.convert('RGBA')
+        
+        # Calculate shadow projection based on angle
+        import math
+        angle_rad = math.radians(shadow_angle)
+        shadow_len = shadow_distance if shadow_distance is not None else int(max(w, h) * 1.5)
+        
+        # Create shadow strip
+        shadow_width_px = max(3, int(w * 0.3))
+        rgba = _hex_to_rgba(shadow_color, shadow_intensity)
+        shadow_strip = Image.new('RGBA', (shadow_len, shadow_width_px), rgba)
+        
+        # Blur and fade
+        blur_amt = shadow_blur if shadow_blur is not None else 10
+        shadow_strip = shadow_strip.filter(ImageFilter.GaussianBlur(radius=blur_amt))
+        
+        # Rotate and position
+        shadow_strip = shadow_strip.rotate(shadow_angle, expand=False)
+        sx = (extended_w - w) // 2 + shadow_offset[0] if shadow_offset else extended_w // 2
+        sy = (extended_h - h) // 2 + shadow_offset[1] if shadow_offset else extended_h // 2
+        bg.alpha_composite(shadow_strip, (sx, sy))
+        
+        # Place original on top
+        img_x = (extended_w - w) // 2
+        img_y = (extended_h - h) // 2
+        bg.alpha_composite(img, (img_x, img_y))
+        return bg
+
+    def _local_gradient_shadow(img: Any) -> Any:
+        """Create shadow with gradient color transition."""
+        w, h = img.size
+        bg = Image.new('RGBA', (w, h), (0, 0, 0, 0) if background_color is None else ImageColor.getrgb(background_color) + (255,))
+        if img.mode != 'RGBA':
+            img = img.convert('RGBA')
+        
+        # Use provided gradient stops or default
+        stops = gradient_stops if gradient_stops else [(shadow_color, shadow_intensity), ("#FFFFFF", 0)]
+        
+        # Create gradient shadow (vertical)
+        sh = shadow_height if shadow_height is not None else int(h * 0.15)
+        sh = max(1, abs(sh))
+        gradient = Image.new('RGBA', (w, sh))
+        
+        for y in range(sh):
+            # Interpolate color across stops
+            pct = y / sh
+            # Simple linear interpolation
+            if len(stops) >= 2:
+                c1, a1 = stops[0]
+                c2, a2 = stops[1]
+                r1, g1, b1, _ = _hex_to_rgba(c1, a1)
+                r2, g2, b2, _ = _hex_to_rgba(c2, a2)
+                r = int(r1 + (r2 - r1) * pct)
+                g = int(g1 + (g2 - g1) * pct)
+                b = int(b1 + (b2 - b1) * pct)
+                a = int(a1 + (a2 - a1) * pct)
+                for x in range(w):
+                    gradient.putpixel((x, y), (r, g, b, a))
+        
+        # Blur gradient
+        blur_amt = shadow_blur if shadow_blur is not None else 15
+        if blur_amt > 0:
+            gradient = gradient.filter(ImageFilter.GaussianBlur(radius=blur_amt))
+        
+        # Position below product
+        off_x = shadow_offset[0] if shadow_offset else 0
+        off_y = shadow_offset[1] if shadow_offset else 15
+        bg.alpha_composite(gradient, (off_x, h - sh + off_y))
+        bg.alpha_composite(img)
+        return bg
+
+    def _apply_hardness(shadow_img: Any, hardness: float) -> Any:
+        """Adjust shadow hardness via edge enhancement or softening."""
+        if hardness < 0.5:
+            # Soften
+            shadow_img = shadow_img.filter(ImageFilter.GaussianBlur(radius=2))
+        elif hardness > 1.5:
+            # Sharpen edges
+            shadow_img = shadow_img.filter(ImageFilter.EDGE_ENHANCE_MORE)
+        return shadow_img
+
     def _local_float_shadow(img: Any) -> Any:
         w, h = img.size
         bg = Image.new('RGBA', (w, h), (0, 0, 0, 0) if background_color is None else ImageColor.getrgb(background_color) + (255,))
@@ -259,21 +419,51 @@ def add_shadow(
     def _apply_local(image_bytes: bytes) -> Dict[str, Any]:
         if Image is None:
             raise RuntimeError("Local fallback requires Pillow; please install Pillow.")
+        
         img = Image.open(BytesIO(image_bytes)).convert('RGBA')
-        out = _local_float_shadow(img) if shadow_type == 'float' else _local_drop_shadow(img)
+        
+        # Route to appropriate shadow function based on mode
+        if shadow_type == 'glow':
+            out = _local_glow_shadow(img)
+        elif shadow_type == 'reflection':
+            out = _local_reflection_shadow(img)
+        elif shadow_type == 'long':
+            out = _local_long_shadow(img)
+        elif shadow_type == 'gradient' or use_gradient:
+            out = _local_gradient_shadow(img)
+        elif shadow_type in ('soft', 'hard'):
+            # Use drop shadow with hardness adjustment
+            out = _local_drop_shadow(img)
+            out = _apply_hardness(out, shadow_hardness)
+        elif shadow_type == 'float':
+            out = _local_float_shadow(img)
+        else:  # regular, drop, natural
+            out = _local_drop_shadow(img)
+        
+        # Apply vignette if requested
+        if vignette_intensity > 0:
+            out = _apply_vignette(out, vignette_intensity)
+        
         buf = BytesIO()
         out.save(buf, format='PNG')
         result_bytes = buf.getvalue()
         b64 = base64.b64encode(result_bytes).decode('utf-8')
+        
         if output_path:
             with open(output_path, 'wb') as f:
                 f.write(result_bytes)
+        
         return {
             'source': 'local',
             'image_base64': b64,
             'result_url': None,
             'shadow_type': shadow_type,
             'background_color': background_color,
+            'features': {
+                'hardness': shadow_hardness,
+                'gradient': use_gradient,
+                'vignette': vignette_intensity,
+            }
         }
 
     try:
