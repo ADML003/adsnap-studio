@@ -52,6 +52,9 @@ def add_shadow(
     use_gradient: bool = False,
     gradient_stops: Optional[List[Tuple[str, int]]] = None,
     vignette_intensity: int = 0,
+    enable_layered_shadow: bool = False,
+    layer_count: int = 2,
+    layer_intensity_decay: float = 0.7,
 ) -> Dict[str, Any]:
     """
     Add shadow to an image using the Bria AI API.
@@ -89,6 +92,9 @@ def add_shadow(
         use_gradient: If True, shadow transitions to second color (use gradient_stops)
         gradient_stops: List of [(color_hex, alpha_pct)] tuples for gradient shadow
         vignette_intensity: Optional vignette darkening 0-100 around image edges
+        enable_layered_shadow: If True, creates multiple shadow layers for depth effect (default: False)
+        layer_count: Number of shadow layers to create (2-5, default: 2). Used with enable_layered_shadow
+        layer_intensity_decay: Decay factor for each layer (0.0-1.0, default: 0.7). Lower values = faster fade
         sku: Optional SKU identifier for tracking
         force_rmbg: Whether to force background removal before adding shadow
         content_moderation: Whether to enable content moderation checks
