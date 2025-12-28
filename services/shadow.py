@@ -167,12 +167,11 @@ def add_shadow(
     }
     
    
-    # If image_data is a string and looks like a URL, treat as image_url
+  
     if isinstance(image_data, str) and image_data.startswith("http"):
         image_url = image_data
         image_data = None
 
-    # Allow loading from local path when provided
     if image_path and not image_data and not image_url:
         with open(image_path, "rb") as f:
             image_data = f.read()
