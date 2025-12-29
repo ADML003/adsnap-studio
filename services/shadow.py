@@ -143,7 +143,7 @@ def add_shadow(
 
     if shadow_color and not _is_valid_hex_color(shadow_color):
         raise ValueError("shadow_color must be a valid hex color like #000000 or #000")
-    # background_transparent overrides background_color when True
+
     if background_transparent is True:
         background_color = None
 
