@@ -124,7 +124,7 @@ def add_shadow(
     }
     
 
-    # Input validation
+    
     allowed_shadow_types = {"regular", "float", "soft", "hard", "long", "glow", "reflection"}
     if shadow_type not in allowed_shadow_types:
         raise ValueError(f"shadow_type must be one of {allowed_shadow_types} (received: {original_shadow_type})")
@@ -143,7 +143,7 @@ def add_shadow(
 
     if shadow_color and not _is_valid_hex_color(shadow_color):
         raise ValueError("shadow_color must be a valid hex color like #000000 or #000")
-
+w
     if background_transparent is True:
         background_color = None
 
